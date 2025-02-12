@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outil de Conversion d'Unités</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f7f7ff, #e9ecef);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+            border-bottom: 1px solid #0062cc;
+        }
+        .form-group {
+            padding: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+        }
+        select, input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .result {
+            padding: 15px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+            border-top: 1px solid #eee;
+        }
+        .category-select {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">Outil de Conversion d'Unités</div>
+    <div class="form-group">
+        <label for="category" class="category-select">Catégorie :</label>
+        <select id="category" onchange="updateUnits()">
+            <option value="distance">Distance</option>
+            <option value="temperature">Température</option>
+            <option value="weight">Poids</option>
+            <option value="volume">Volume</option>
+            <option value="area">Surface</option>
+            <option value="time">Temps</option>
+            <option value="energy">Énergie</option>
+            <option value="speed">Vitesse</option>
+        </select>
+
+        <label for="value">Valeur à convertir :</label>
+        <input type="number" id="value" placeholder="Entrez une valeur" required>
+
+        <label for="fromUnit">Convertir de :</label>
+        <select id="fromUnit"></select>
+
+        <label for="toUnit">Convertir en :</label>
+        <select id="toUnit"></select>
+
+        <button onclick="convert()">Convertir</button>
+
+        <div class="result" id="result"></div>
+    </div>
+</div>
+
+<script>
+    const unitCategories = {
+        distance: {
+            units: ['kilometers', 'miles', 'meters', 'centimeters', 'millimeters', 'yards', 'feet', 'inches'],
+            conversions: {
+                kilometers: { miles: 0.621371, meters: 1000, centimeters: 100000, millimeters: 1000000, yards: 1093.61, feet: 3280.84, inches: 39370.1 },
+                miles: { kilometers: 1.60934, meters: 1609.34, centimeters: 160934, millimeters: 1609340, yards: 1760, feet: 5280, inches: 63360 },
+                meters: { kilometers: 0.001, miles: 0.000621371, centimeters: 100, millimeters: 1000, yards: 1.09361, feet: 3.28084, inches: 39.3701 },
+                centimeters: { kilometers: 0.00001, miles: 0.00000621371, meters: 0.01, millimeters: 10, yards: 0.0109361, feet: 0.0328084, inches: 0.393701 },
+                millimeters: { kilometers: 0.000001, miles: 0.000000621371, meters: 0.001, centimeters: 0.1, yards: 0.00109361, feet: 0.00328084, inches: 0.0393701 },
+                yards: { kilometers: 0.0009144, miles: 0.000568182, meters: 0.9144, centimeters: 91.44, millimeters: 914.4, feet: 3, inches: 36 },
+                feet: { kilometers: 0.0003048, miles: 0.000189394, meters: 0.3048, centimeters: 30.48, millimeters: 304.8, yards: 0.333333, inches: 12 },
+                inches: { kilometers: 0.0000254, miles: 0.0000157828, meters: 0.0254, centimeters: 2.54, millimeters: 25.4, yards: 0.0277778, feet: 0.0833333 }
+            }
+        },
+        temperature: {
+            units: ['celsius', 'fahrenheit', 'kelvin'],
+            conversions: {
+                celsius: { fahrenheit: (val) => (val * 9/5) + 32, kelvin: (val) => val + 273.15 },
+                fahrenheit: { celsius: (val) => (val - 32) * 5/9, kelvin: (val) => (val - 32) * 5/9 + 273.15 },
+                kelvin: { celsius: (val) => val - 273.15, fahrenheit: (val) => (val - 273.15) * 9/5 + 32 }
+            }
+        },
+        weight: {
+            units: ['kilograms', 'pounds', 'grams', 'milligrams', 'ounces', 'stones'],
+            conversions: {
+                kilograms: { pounds: 2.20462, grams: 1000, milligrams: 1000000, ounces: 35.274, stones: 0.157473 },
+                pounds: { kilograms: 0.453592, grams: 453.592, milligrams: 453592, ounces: 16, stones: 0.0714286 },
+                grams: { kilograms: 0.001, pounds: 0.00220462, milligrams: 1000, ounces: 0.035274, stones: 0.000157473 },
+                milligrams: { kilograms: 0.000001, pounds: 0.00000220462, grams: 0.001, ounces: 0.000035274, stones: 0.000000157473 },
+                ounces: { kilograms: 0.0283495, pounds: 0.0625, grams: 28.3495, milligrams: 28349.5, stones: 0.00446429 },
+                stones: { kilograms: 6.35029, pounds: 14, grams: 6350.29, milligrams: 6350290, ounces: 224 }
+            }
+        },
+        volume: {
+            units: ['liters', 'gallons', 'milliliters', 'fluidOunces', 'cubicMeters', 'cubicFeet'],
+            conversions: {
+                liters: { gallons: 0.264172, milliliters: 1000, fluidOunces: 33.814, cubicMeters: 0.001, cubicFeet: 0.0353147 },
+                gallons: { liters: 3.78541, milliliters: 3785.41, fluidOunces: 128, cubicMeters: 0.00378541, cubicFeet: 0.133681 },
+                milliliters: { liters: 0.001, gallons: 0.000264172, fluidOunces: 0.033814, cubicMeters: 0.000001, cubicFeet: 0.0000353147 },
+                fluidOunces: { liters: 0.0295735, gallons: 0.0078125, milliliters: 29.5735, cubicMeters: 0.0000295735, cubicFeet: 0.00104438 },
+                cubicMeters: { liters: 1000, gallons: 264.172, milliliters: 1000000, fluidOunces: 33814, cubicFeet: 35.3147 },
+                cubicFeet: { liters: 28.3168, gallons: 7.48052, milliliters: 28316.8, fluidOunces: 957.506, cubicMeters: 0.0283168 }
+            }
+        },
+        area: {
+            units: ['squareMeters', 'squareKilometers', 'squareFeet', 'acres', 'hectares'],
+            conversions: {
+                squareMeters: { squareKilometers: 0.000001, squareFeet: 10.7639, acres: 0.000247105, hectares: 0.0001 },
+                squareKilometers: { squareMeters: 1000000, squareFeet: 10763900, acres: 247.105, hectares: 100 },
+                squareFeet: { squareMeters: 0.092903, squareKilometers: 0.000000092903, acres: 0.0000229568, hectares: 0.0000092903 },
+                acres: { squareMeters: 4046.86, squareKilometers: 0.00404686, squareFeet: 43560, hectares: 0.404686 },
+                hectares: { squareMeters: 10000, squareKilometers: 0.01, squareFeet: 107639, acres: 2.47105 }
+            }
+        },
+        time: {
+            units: ['seconds', 'minutes', 'hours', 'days', 'weeks', 'years'],
+            conversions: {
+                seconds: { minutes: 0.0166667, hours: 0.000277778, days: 0.0000115741, weeks: 0.00000165344, years: 3.17098e-8 },
+                minutes: { seconds: 60, hours: 0.0166667, days: 0.000694444, weeks: 0.0000992063, years: 0.00000190132 },
+                hours: { seconds: 3600, minutes: 60, days: 0.0416667, weeks: 0.00595238, years: 0.000114079 },
+                days: { seconds: 86400, minutes: 1440, hours: 24, weeks: 0.142857, years: 0.00273791 },
+                weeks: { seconds: 604800, minutes: 10080, hours: 168, days: 7, years: 0.0191654 },
+                years: { seconds: 31536000, minutes: 525600, hours: 8760, days: 365, weeks: 52.1429 }
+            }
+        },
+        energy: {
+            units: ['joules', 'calories', 'kilowattHours', 'electronVolts'],
+            conversions: {
+                joules: { calories: 0.239006, kilowattHours: 0.000000277778, electronVolts: 6.24151e+18 },
+                calories: { joules: 4.184, kilowattHours: 0.00000116222, electronVolts: 2.61257e+19 },
+                kilowattHours: { joules: 3600000, calories: 860421, electronVolts: 2.24694e+25 },
+                electronVolts: { joules: 1.60218e-19, calories: 3.82755e-20, kilowattHours: 4.4505e-26 }
+            }
+        },
+        speed: {
+            units: ['kilometersPerHour', 'milesPerHour', 'metersPerSecond', 'knots'],
+            conversions: {
+                kilometersPerHour: { milesPerHour: 0.621371, metersPerSecond: 0.277778, knots: 0.539957 },
+                milesPerHour: { kilometersPerHour: 1.60934, metersPerSecond: 0.44704, knots: 0.868976 },
+                metersPerSecond: { kilometersPerHour: 3.6, milesPerHour: 2.23694, knots: 1.94384 },
+                knots: { kilometersPerHour: 1.852, milesPerHour: 1.15078, metersPerSecond: 0.514444 }
+            }
+        }
+    };
+
+    function updateUnits() {
+        const category = document.getElementById('category').value;
+        const fromUnitSelect = document.getElementById('fromUnit');
+        const toUnitSelect = document.getElementById('toUnit');
+
+        // Clear previous options
+        fromUnitSelect.innerHTML = '';
+        toUnitSelect.innerHTML = '';
+
+        // Add new options based on selected category
+        unitCategories[category].units.forEach(unit => {
+            const option = document.createElement('option');
+            option.value = unit;
+            option.textContent = unit.charAt(0).toUpperCase() + unit.slice(1);
+            fromUnitSelect.appendChild(option.cloneNode(true));
+            toUnitSelect.appendChild(option.cloneNode(true));
+        });
+    }
+
+    function convert() {
+        const value = parseFloat(document.getElementById('value').value);
+        const fromUnit = document.getElementById('fromUnit').value;
+        const toUnit = document.getElementById('toUnit').value;
+        const category = document.getElementById('category').value;
+
+        if (isNaN(value)) {
+            document.getElementById('result').textContent = "Veuillez entrer une valeur numérique valide.";
+            return;
+        }
+
+        const conversionTable = unitCategories[category].conversions[fromUnit];
+        let result;
+
+        if (typeof conversionTable === 'object') {
+            result = value * conversionTable[toUnit];
+        } else if (typeof conversionTable === 'function') {
+            result = conversionTable(value);
+        } else {
+            result = value; // Même unité sélectionnée
+        }
+
+        document.getElementById('result').textContent = `${value} ${fromUnit} = ${result.toFixed(4)} ${toUnit}`;
+    }
+
+    // Initialize units on page load
+    updateUnits();
+</script>
+
+</body>
+</html>
